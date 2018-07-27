@@ -1,0 +1,18 @@
+[paths]
+source =
+  src/middle_schema
+  */site-packages/middle_schema
+
+[run]
+branch = true
+source =
+  middle_schema
+  tests
+parallel = true
+
+[report]
+show_missing = true
+precision = 2
+omit = *benchmarks*
+exclude_lines =
+  noqa
