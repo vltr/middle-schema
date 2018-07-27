@@ -46,7 +46,7 @@
 
 .. end-badges
 
-Translate your middle model declarations to OpenAPI, JSONSchema or any other schema you need!
+Translate your `middle <https://middle.readthedocs.io/en/latest/>`_ model declarations to OpenAPI, JSONSchema or any other schema you need!
 
 Quick peak
 ----------
