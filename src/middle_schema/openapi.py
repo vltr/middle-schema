@@ -22,10 +22,7 @@ class OpenAPI:
 
 def parse(model_or_field):
     specs, components = _parse_skeleton(translate(model_or_field), {})
-    return OpenAPI(
-        components=components,
-        specification=specs
-    )
+    return OpenAPI(components=components, specification=specs)
 
 
 def _component_name(name):
@@ -56,10 +53,7 @@ def _parse_model(type_, skeleton, components):
         "description": skeleton.description,
         "properties": children,
         "required": [
-            c.name
-            for c in filter(
-                lambda s: not s.nullable, skeleton.children
-            )
+            c.name for c in filter(lambda s: not s.nullable, skeleton.children)
         ],
     }
     if middle.config.openapi_model_as_component:
@@ -151,11 +145,7 @@ def _parse_type_enum(type_, skeleton, components):
 def _parse_type_iterable_set(type_, skeleton, components):
     output, components = _parse_skeleton(skeleton.children[0], components)
     return (
-        {
-            "type": "array",
-            "items": {**output},
-            **_get_validators(skeleton),
-        },
+        {"type": "array", "items": {**output}, **_get_validators(skeleton)},
         components,
     )
 
@@ -163,13 +153,7 @@ def _parse_type_iterable_set(type_, skeleton, components):
 @_parse_type.register(typing.Dict)
 def _parse_type_dict(type_, skeleton, components):
     output, components = _parse_skeleton(skeleton.children[0], components)
-    return (
-        {
-            "type": "object",
-            "additionalProperties": output,
-        },
-        components,
-    )
+    return ({"type": "object", "additionalProperties": output}, components)
 
 
 @_parse_type.register(typing.Union)

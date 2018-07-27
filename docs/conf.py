@@ -26,7 +26,7 @@ project = 'middle-schema'
 year = '2018'
 author = 'Richard Kuesters'
 copyright = '{0}, {1}'.format(year, author)
-version = release = '0.1.1'
+version = release = '0.1.0'
 
 pygments_style = 'default'
 templates_path = ['.']
@@ -40,7 +40,7 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 if not on_rtd:  # only set the theme if we're building docs locally
     html_theme = 'sphinx_rtd_theme'
 
-html_logo = "static/middle-logo.svg"
+html_logo = "static/middle-schema-logo.svg"
 html_use_smartypants = True
 html_last_updated_fmt = '%b %d, %Y'
 html_split_index = False

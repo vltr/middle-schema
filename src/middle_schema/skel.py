@@ -16,8 +16,6 @@ from middle.exceptions import InvalidType
 from middle.model import ModelMeta
 from middle.validators import BaseValidator
 
-from .utils import raise_simple_type
-
 # --------------------------------------------------------------------------- #
 # Validator related data
 # --------------------------------------------------------------------------- #
@@ -110,17 +108,16 @@ def translate(field, model_or_field=None):
 # --------------------------------------------------------------------------- #
 
 
-def _get_skel_name(model_or_field):
-    if model_or_field is None:
-        return None
+def _get_skel_name(model_or_field, extra_field=None):
+    if extra_field is not None:
+        return _get_skel_name(extra_field, None)
     if isinstance(model_or_field, Attribute):
         return model_or_field.name
-    elif inspect.isclass(model_or_field) and (
-        issubclass(model_or_field, middle.Model)
-        or hasattr(model_or_field, "__attrs_attrs__")
+    elif inspect.isclass(model_or_field) and issubclass(
+        model_or_field, middle.Model
     ):
         return model_or_field.__name__
-    else:
+    else:  # noqa if it get's here (not if based on middle)
         return str(model_or_field)
 
 
@@ -144,8 +141,6 @@ def _get_validator_data(field):
 
 
 def _get_model_description(model):
-    if model is None:
-        return None
     if hasattr(model, "__description__") and isinstance(
         model.__description__, str
     ):
@@ -170,22 +165,6 @@ def _translate_type(type_, model_or_field):
 
 
 # --------------------------------------------------------------------------- #
-# Types that needs to be handled "differently"
-# --------------------------------------------------------------------------- #
-
-
-# @_translate_type.register(list)
-# @_translate_type.register(set)
-# def _translate_type_simple_iterables(type_, model_or_field):
-#     raise_simple_type(type_, typing.List, typing.Set)
-
-
-# @_translate_type.register(dict)
-# def _translate_type_simple_dict(type_, model_or_field):
-#     raise_simple_type(type_, typing.Dict)
-
-
-# --------------------------------------------------------------------------- #
 # Recursive (Model) types
 # --------------------------------------------------------------------------- #
 
@@ -194,8 +173,9 @@ def _translate_type(type_, model_or_field):
 @_translate_type.register(ModelMeta)
 def _translate_model_meta(type_, model_or_field):
     return ComplexSkeleton(
-        name=_get_skel_name(type_),
-        description=_get_model_description(type_) or _get_attr_description(model_or_field),
+        name=_get_skel_name(type_, model_or_field),
+        description=_get_model_description(type_)
+        or _get_attr_description(model_or_field),
         field=model_or_field or type_,
         of_type=type_,
         children=[translate(field, type_) for field in attr.fields(type_)],
@@ -282,13 +262,14 @@ def _translate_type_dict(type_, model_or_field):
 def _translate_type_union(type_, model_or_field):
     if NoneType in type_.__args__:
         if len(type_.__args__) == 2:  # Optional
+            arg = list(filter(lambda a: a is not NoneType, type_.__args__))[0]
             return ComplexSkeleton(
                 name=_get_skel_name(model_or_field),
                 description=_get_attr_description(model_or_field),
                 field=model_or_field,
                 of_type=type_,
                 validator_data=_get_validator_data(model_or_field),
-                children=[translate(type_.__args__[1], model_or_field)],
+                children=[translate(arg, model_or_field)],
                 nullable=True,
             )
         else:
@@ -313,8 +294,6 @@ def _translate_type_union(type_, model_or_field):
         field=model_or_field,
         of_type=type_,
         validator_data=_get_validator_data(model_or_field),
-        children=[
-            translate(arg, model_or_field) for arg in type_.__args__
-        ],
+        children=[translate(arg, model_or_field) for arg in type_.__args__],
         type_specific={"any_of": True},
     )

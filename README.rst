@@ -4,27 +4,9 @@
 
 .. start-badges
 
-A lot of badges from the ``cookiecutter`` template I used. I think I'll get rid of a lot of them in the near future.
-
-.. image:: https://readthedocs.org/projects/middle-schema/badge/?style=flat
-    :target: https://readthedocs.org/projects/middle-schema
-    :alt: Documentation Status
-
-.. image:: https://travis-ci.org/vltr/middle-schema.svg?branch=master
-    :alt: Travis-CI Build Status
-    :target: https://travis-ci.org/vltr/middle-schema
-
-.. image:: https://ci.appveyor.com/api/projects/status/github/vltr/middle-schema?branch=master&svg=true
-    :alt: AppVeyor Build Status
-    :target: https://ci.appveyor.com/project/vltr/middle-schema
-
-.. image:: https://codecov.io/github/vltr/middle-schema/coverage.svg?branch=master
-    :alt: Coverage Status
-    :target: https://codecov.io/github/vltr/middle-schema
-
-.. image:: https://api.codacy.com/project/badge/Grade/10c6ef32dfbe497087d57c9d86c02c80
-    :alt: Codacy Grade
-    :target: https://www.codacy.com/app/vltr/middle-schema?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=vltr/middle-schema&amp;utm_campaign=Badge_Grade
+.. image:: https://img.shields.io/pypi/status/middle-schema.svg
+    :alt: PyPI - Status
+    :target: https://pypi.org/project/middle-schema/
 
 .. image:: https://img.shields.io/pypi/v/middle-schema.svg
     :alt: PyPI Package latest release
@@ -34,13 +16,29 @@ A lot of badges from the ``cookiecutter`` template I used. I think I'll get rid 
     :alt: Supported versions
     :target: https://pypi.org/project/middle-schema/
 
-.. image:: https://img.shields.io/pypi/implementation/middle-schema.svg
-    :alt: Supported implementations
-    :target: https://pypi.org/project/middle-schema/
+.. image:: https://travis-ci.org/vltr/middle-schema.svg?branch=master
+    :alt: Travis-CI Build Status
+    :target: https://travis-ci.org/vltr/middle-schema
 
-.. image:: https://img.shields.io/pypi/status/middle-schema.svg
-    :alt: PyPI - Status
-    :target: https://pypi.org/project/middle-schema/
+.. image:: https://ci.appveyor.com/api/projects/status/github/vltr/middle-schema?branch=master&svg=true
+    :alt: AppVeyor Build Status
+    :target: https://ci.appveyor.com/project/vltr/middle-schema
+
+.. image:: https://readthedocs.org/projects/middle-schema/badge/?style=flat
+    :target: https://readthedocs.org/projects/middle-schema
+    :alt: Documentation Status
+
+.. image:: https://codecov.io/github/vltr/middle-schema/coverage.svg?branch=master
+    :alt: Coverage Status
+    :target: https://codecov.io/github/vltr/middle-schema
+
+.. image:: https://api.codacy.com/project/badge/Grade/6425ac0a119f481bb4f2b269bd7f52fc
+    :alt: Codacy Grade
+    :target: https://www.codacy.com/app/vltr/middle-schema?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=vltr/middle-schema&amp;utm_campaign=Badge_Grade
+
+.. image:: https://pyup.io/repos/github/vltr/middle-schema/shield.svg
+    :target: https://pyup.io/account/repos/github/vltr/middle-schema/
+    :alt: Packages status
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
     :alt: Code style: black
@@ -77,13 +75,7 @@ Quick peak
     ...     }
     ... }
 
-    >>> game = Game(**data)
-
-    >>> game
-    Game(name='Cities: Skylines', score=9.0, resolution_tested='1920x1200', genre=['Simulators', 'City Building'], rating={'IGN': 8.5, 'Gamespot': 8.0, 'Steam': 4.5})
-
-    >>> middle.asdict(game)
-    {'name': 'Cities: Skylines', 'score': 9.0, 'resolution_tested': '1920x1200', 'genre': ['Simulators', 'City Building'], 'rating': {'IGN': 8.5, 'Gamespot': 8.0, 'Steam': 4.5}}
+    >>> # TO BE CONTINUED
 
 .. warning::
 
