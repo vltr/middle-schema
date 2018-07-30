@@ -12,5 +12,6 @@ metadata_options.append(MetadataOption(name="description", type_=str))
 
 middle.config.add_option("openapi_model_as_component", bool, True)
 middle.config.add_option("openapi_enum_as_component", bool, True)
+middle.config.add_option("default_as_nullable", bool, True)
 
 __all__ = ()

@@ -45,6 +45,7 @@ class Skeleton:
     of_type = attr.ib()
     field = attr.ib(type=Attribute, default=None)
     type_specific = attr.ib(type=dict, default=None)
+    description = attr.ib(type=str, default=None)
     _children = attr.ib(type=list, default=None)
 
     @property
@@ -82,13 +83,13 @@ class Skeleton:
 @attr.s
 class ComplexSkeleton(Skeleton):
     name = attr.ib(type=str, default=None)
-    description = attr.ib(type=str, default=None)
     nullable = attr.ib(type=bool, default=False)
     validator_data = attr.ib(type=ValidatorData, default=None)
 
     def __attrs_post_init__(self):
-        if not self.nullable and self.has_default_value:
-            self.nullable = True
+        if middle.config.default_as_nullable:  # FIXME is this right?
+            if not self.nullable and self.has_default_value:
+                self.nullable = True
 
 
 # --------------------------------------------------------------------------- #
@@ -133,7 +134,7 @@ def _get_validator_data(field):
         else:
             if isinstance(field.validator, BaseValidator):
                 data["rules"] = field.validator.descriptor.items()
-            elif (field.validator, _InstanceOfValidator):
+            elif isinstance(field.validator, _InstanceOfValidator):
                 data["of_type"] = field.validator.type
     of_type = data.get("of_type")
     rules = None if len(data.get("rules")) == 0 else data.get("rules")

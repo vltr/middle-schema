@@ -10,7 +10,6 @@ from middle.exceptions import InvalidType
 from middle.model import ModelMeta
 
 from .skel import translate
-from .utils import raise_simple_type
 from .utils import snake_to_camel_case
 
 
@@ -39,6 +38,13 @@ def _get_validators(skeleton):
     return {}
 
 
+def _merge_keywords(skeleton):
+    output = _get_validators(skeleton)
+    if skeleton.description is not None:
+        output["description"] = skeleton.description
+    return output
+
+
 def _parse_skeleton(skeleton, components):
     return _parse_type(skeleton.of_type, skeleton, components)
 
@@ -50,21 +56,22 @@ def _parse_model(type_, skeleton, components):
         children.update({c.name: o})
     output = {
         "type": "object",
-        "description": skeleton.description,
         "properties": children,
         "required": [
             c.name for c in filter(lambda s: not s.nullable, skeleton.children)
         ],
     }
+    if skeleton.description is not None:
+        output["description"] = skeleton.description
     if middle.config.openapi_model_as_component:
-        components[skeleton.name] = output
-        output = {"$ref": _component_name(skeleton.name)}
+        components[type_.__name__] = output
+        output = {"$ref": _component_name(type_.__name__)}
     return output, components
 
 
 @type_dispatch()
 def _parse_type(type_, skeleton, components):
-    raise InvalidType()
+    raise InvalidType()  # noqa will it get here after skel?
 
 
 @_parse_type.register(middle.Model)  # for recursive types
@@ -73,26 +80,15 @@ def _parse_model_meta(type_, skeleton, components):
     return _parse_model(type_, skeleton, components)
 
 
-@_parse_type.register(list)
-@_parse_type.register(set)
-def _parse_type_simple_iterables(type_, skeleton, components):
-    raise_simple_type(type_, typing.List, typing.Set)
-
-
-@_parse_type.register(dict)
-def _parse_type_simple_dict(type_, skeleton, components):
-    raise_simple_type(type_, typing.Dict)
-
-
 @_parse_type.register(str)
 def _parse_type_str(type_, skeleton, components):
-    return {"type": "string", **_get_validators(skeleton)}, components
+    return {"type": "string", **_merge_keywords(skeleton)}, components
 
 
 @_parse_type.register(bytes)
 def _parse_type_bytes(type_, skeleton, components):
     return (
-        {"type": "string", "format": "byte", **_get_validators(skeleton)},
+        {"type": "string", "format": "byte", **_merge_keywords(skeleton)},
         components,
     )
 
@@ -100,7 +96,7 @@ def _parse_type_bytes(type_, skeleton, components):
 @_parse_type.register(int)
 def _parse_type_int(type_, skeleton, components):
     return (
-        {"type": "integer", "format": "int64", **_get_validators(skeleton)},
+        {"type": "integer", "format": "int64", **_merge_keywords(skeleton)},
         components,
     )
 
@@ -109,24 +105,30 @@ def _parse_type_int(type_, skeleton, components):
 @_parse_type.register(Decimal)
 def _parse_type_number(type_, skeleton, components):
     return (
-        {"type": "number", "format": "double", **_get_validators(skeleton)},
+        {"type": "number", "format": "double", **_merge_keywords(skeleton)},
         components,
     )
 
 
 @_parse_type.register(bool)
 def _parse_type_bool(type_, skeleton, components):
-    return {"type": "boolean"}, components
+    return {"type": "boolean", **_merge_keywords(skeleton)}, components
 
 
 @_parse_type.register(datetime.date)
 def _parse_type_date(type_, skeleton, components):
-    return {"type": "string", "format": "date"}, components
+    return (
+        {"type": "string", "format": "date", **_merge_keywords(skeleton)},
+        components,
+    )
 
 
 @_parse_type.register(datetime.datetime)
 def _parse_type_datetime(type_, skeleton, components):
-    return {"type": "string", "format": "date-time"}, components
+    return (
+        {"type": "string", "format": "date-time", **_merge_keywords(skeleton)},
+        components,
+    )
 
 
 @_parse_type.register(EnumMeta)
@@ -145,7 +147,7 @@ def _parse_type_enum(type_, skeleton, components):
 def _parse_type_iterable_set(type_, skeleton, components):
     output, components = _parse_skeleton(skeleton.children[0], components)
     return (
-        {"type": "array", "items": {**output}, **_get_validators(skeleton)},
+        {"type": "array", "items": {**output}, **_merge_keywords(skeleton)},
         components,
     )
 
@@ -153,13 +155,22 @@ def _parse_type_iterable_set(type_, skeleton, components):
 @_parse_type.register(typing.Dict)
 def _parse_type_dict(type_, skeleton, components):
     output, components = _parse_skeleton(skeleton.children[0], components)
-    return ({"type": "object", "additionalProperties": output}, components)
+    return (
+        {
+            "type": "object",
+            "additionalProperties": output,
+            **_merge_keywords(skeleton),
+        },
+        components,
+    )
 
 
 @_parse_type.register(typing.Union)
 def _parse_type_union(type_, skeleton, components):
     output = {}
-    if skeleton.type_specific.get("any_of", False):
+    if skeleton.type_specific is not None and skeleton.type_specific.get(
+        "any_of", False
+    ):
         any_of = []
         for s in skeleton.children:
             o, components = _parse_skeleton(s, components)
