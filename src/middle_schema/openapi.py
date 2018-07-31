@@ -10,6 +10,7 @@ from middle.exceptions import InvalidType
 from middle.model import ModelMeta
 
 from .skel import translate
+from .utils import is_model
 from .utils import snake_to_camel_case
 
 
@@ -29,7 +30,7 @@ def _component_name(name):
 
 
 def _get_validators(skeleton):
-    if skeleton.is_field:
+    if skeleton.name is not None and not is_model(skeleton.type):
         if skeleton.validator_data.rules is not None:
             return {
                 snake_to_camel_case(k): v
@@ -46,7 +47,7 @@ def _merge_keywords(skeleton):
 
 
 def _parse_skeleton(skeleton, components):
-    return _parse_type(skeleton.of_type, skeleton, components)
+    return _parse_type(skeleton.type, skeleton, components)
 
 
 def _parse_model(type_, skeleton, components):
@@ -58,7 +59,11 @@ def _parse_model(type_, skeleton, components):
         "type": "object",
         "properties": children,
         "required": [
-            c.name for c in filter(lambda s: not s.nullable, skeleton.children)
+            c.name
+            for c in filter(
+                lambda s: not s.nullable and not s.has_default_value,
+                skeleton.children,
+            )
         ],
     }
     if skeleton.description is not None:
@@ -137,8 +142,11 @@ def _parse_type_enum(type_, skeleton, components):
     output, components = _parse_type(type(choices[0]), skeleton, components)
     output["choices"] = choices
     if middle.config.openapi_enum_as_component:
+        description = output.pop("description")
         components[type_.__name__] = output
         output = {"$ref": _component_name(type_.__name__)}
+        if description is not None:
+            output["description"] = description
     return output, components
 
 
@@ -180,13 +188,5 @@ def _parse_type_union(type_, skeleton, components):
         output, components = _parse_skeleton(skeleton.children[0], components)
     if skeleton.nullable:
         output["nullable"] = True
+    output.update(**_merge_keywords(skeleton))
     return output, components
-
-
-# TODO: I don't think I can order the types in the OpenAPI spec, can I ?
-# @_serialize_type.register(typing.Tuple)
-# def _serialize_type_tuple(type_):
-#     return partial(
-#         _multiple_types_serialize_type_ordered,
-#         [_serialize_type(arg) for arg in type_.__args__],
-#     )

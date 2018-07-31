@@ -5,7 +5,6 @@ import middle
 import pytest
 from middle.exceptions import InvalidType
 
-from middle_schema.skel import ComplexSkeleton
 from middle_schema.skel import Skeleton
 from middle_schema.skel import translate
 
@@ -16,11 +15,9 @@ def test_simple_model():
 
     skel = translate(TestModel)
 
-    assert isinstance(skel, ComplexSkeleton)
+    assert isinstance(skel, Skeleton)
     assert len(skel.children) == 1
-    assert skel.of_type == TestModel
-    assert skel.is_model
-    assert not skel.is_field
+    assert skel.type == TestModel
     assert not skel.has_default_value
     assert skel.name == "TestModel"
     assert skel.description is None
@@ -29,19 +26,15 @@ def test_simple_model():
 
     skel = skel.children[0]
 
-    assert isinstance(skel, ComplexSkeleton)
+    assert isinstance(skel, Skeleton)
     assert skel.children is None
-    assert skel.of_type == str
-    assert not skel.is_model
-    assert skel.is_field
+    assert skel.type == str
     assert not skel.has_default_value
     assert skel.name == "name"
     assert skel.description == "The name"
     assert not skel.nullable
-    assert skel.validator_data is not None
-    assert skel.validator_data.has_rules
-    assert skel.validator_data.has_type_check
     assert skel.validator_data.rules == {"min_length": 5}
+    assert skel.validator_data.type_check == str
 
 
 def test_simple_model_with_typing():
@@ -53,11 +46,9 @@ def test_simple_model_with_typing():
 
     skel = translate(TestModel)
 
-    assert isinstance(skel, ComplexSkeleton)
+    assert isinstance(skel, Skeleton)
     assert len(skel.children) == 1
-    assert skel.of_type == TestModel
-    assert skel.is_model
-    assert not skel.is_field
+    assert skel.type == TestModel
     assert not skel.has_default_value
     assert skel.name == "TestModel"
     assert skel.description == "Test model for unit tests"
@@ -66,28 +57,28 @@ def test_simple_model_with_typing():
 
     skel = skel.children[0]
 
-    assert isinstance(skel, ComplexSkeleton)
+    assert isinstance(skel, Skeleton)
     assert len(skel.children) == 1
-    assert skel.of_type == t.List[str]
-    assert not skel.is_model
-    assert skel.is_field
+    assert skel.type == t.List[str]
     assert skel.has_default_value
+    assert skel.default_value == []
     assert skel.name == "name"
     assert skel.description == "List of names"
-    assert skel.nullable
-    assert skel.validator_data is not None
-    assert not skel.validator_data.has_rules
-    assert skel.validator_data.has_type_check
-    assert skel.validator_data.of_type == list
+    assert not skel.nullable
+    assert skel.validator_data.rules is None
+    assert skel.validator_data.type_check == list
 
     skel = skel.children[0]
 
     assert isinstance(skel, Skeleton)
     assert skel.children is None
-    assert skel.of_type == str
-    assert not skel.is_model
-    assert not skel.is_field
+    assert skel.type == str
     assert not skel.has_default_value
+    assert skel.validator_data is None
+    assert skel.name is None
+    assert skel.type_specific is None
+    assert skel.description is None
+    assert skel.nullable is False
 
 
 def test_enum_choices():
@@ -102,27 +93,21 @@ def test_enum_choices():
 
     skel = translate(TestModel)
 
-    assert isinstance(skel, ComplexSkeleton)
+    assert isinstance(skel, Skeleton)
     assert len(skel.children) == 1
-    assert skel.of_type == TestModel
-    assert skel.is_model
+    assert skel.type == TestModel
     assert skel.name == "TestModel"
 
     skel = skel.children[0]
 
-    assert isinstance(skel, ComplexSkeleton)
+    assert isinstance(skel, Skeleton)
     assert len(skel.children) == 1
-    assert skel.of_type == TestIntEnum
-    assert not skel.is_model
-    assert skel.is_field
-    assert not skel.has_default_value
+    assert skel.type == TestIntEnum
     assert skel.name == "some_enum"
     assert skel.description is None
     assert not skel.nullable
-    assert skel.validator_data is not None
-    assert not skel.validator_data.has_rules
-    assert skel.validator_data.has_type_check
-    assert skel.validator_data.of_type == TestIntEnum
+    assert skel.validator_data.rules is None
+    assert skel.validator_data.type_check == TestIntEnum
     assert skel.type_specific is not None
     assert skel.type_specific == {"choices": [1, 2, 3]}
 
@@ -130,10 +115,13 @@ def test_enum_choices():
 
     assert isinstance(skel, Skeleton)
     assert skel.children is None
-    assert skel.of_type == int
-    assert not skel.is_model
-    assert not skel.is_field
+    assert skel.type == int
     assert not skel.has_default_value
+    assert skel.validator_data is None
+    assert skel.name is None
+    assert skel.type_specific is None
+    assert skel.description is None
+    assert skel.nullable is False
 
 
 def test_dict_type():
@@ -146,27 +134,21 @@ def test_dict_type():
 
     skel = translate(TestModel)
 
-    assert isinstance(skel, ComplexSkeleton)
+    assert isinstance(skel, Skeleton)
     assert len(skel.children) == 1
-    assert skel.of_type == TestModel
-    assert skel.is_model
+    assert skel.type == TestModel
     assert skel.name == "TestModel"
 
     skel = skel.children[0]
 
-    assert isinstance(skel, ComplexSkeleton)
+    assert isinstance(skel, Skeleton)
     assert len(skel.children) == 1
-    assert skel.of_type == t.Dict[str, str]
-    assert not skel.is_model
-    assert skel.is_field
+    assert skel.type == t.Dict[str, str]
     assert not skel.has_default_value
     assert skel.name == "options"
     assert skel.description == "Options for TestModel"
     assert not skel.nullable
-    assert skel.validator_data is not None
-    assert skel.validator_data.has_rules
-    assert skel.validator_data.has_type_check
-    assert skel.validator_data.of_type == dict
+    assert skel.validator_data.type_check == dict
     assert skel.validator_data.rules == {"min_properties": 1}
     assert skel.type_specific is None
 
@@ -174,10 +156,13 @@ def test_dict_type():
 
     assert isinstance(skel, Skeleton)
     assert skel.children is None
-    assert skel.of_type == str
-    assert not skel.is_model
-    assert not skel.is_field
+    assert skel.type == str
     assert not skel.has_default_value
+    assert skel.validator_data is None
+    assert skel.name is None
+    assert skel.type_specific is None
+    assert skel.description is None
+    assert skel.nullable is False
 
 
 def test_invalid_dict_type():
@@ -202,27 +187,21 @@ def test_optional_type():
 
     skel = translate(TestModel)
 
-    assert isinstance(skel, ComplexSkeleton)
+    assert isinstance(skel, Skeleton)
     assert len(skel.children) == 1
-    assert skel.of_type == TestModel
-    assert skel.is_model
+    assert skel.type == TestModel
     assert skel.name == "TestModel"
 
     skel = skel.children[0]
 
-    assert isinstance(skel, ComplexSkeleton)
+    assert isinstance(skel, Skeleton)
     assert len(skel.children) == 1
-    assert skel.of_type == t.Union[str, middle.compat.NoneType]
-    assert not skel.is_model
-    assert skel.is_field
+    assert skel.type == t.Union[str, middle.compat.NoneType]
     assert not skel.has_default_value
     assert skel.name == "maybe_name"
     assert skel.description is None
     assert skel.nullable
-    assert skel.validator_data is not None
-    assert not skel.validator_data.has_rules
-    assert skel.validator_data.has_type_check
-    assert skel.validator_data.of_type == (str, middle.compat.NoneType)
+    assert skel.validator_data.type_check == (str, middle.compat.NoneType)
     assert skel.validator_data.rules is None
     assert skel.type_specific is None
 
@@ -230,10 +209,13 @@ def test_optional_type():
 
     assert isinstance(skel, Skeleton)
     assert skel.children is None
-    assert skel.of_type == str
-    assert not skel.is_model
-    assert skel.is_field
+    assert skel.type == str
     assert not skel.has_default_value
+    assert skel.validator_data is None
+    assert skel.name is None
+    assert skel.type_specific is None
+    assert skel.description is None
+    assert skel.nullable is False
 
 
 def test_union_type_nullable():
@@ -242,27 +224,21 @@ def test_union_type_nullable():
 
     skel = translate(TestModel)
 
-    assert isinstance(skel, ComplexSkeleton)
+    assert isinstance(skel, Skeleton)
     assert len(skel.children) == 1
-    assert skel.of_type == TestModel
-    assert skel.is_model
+    assert skel.type == TestModel
     assert skel.name == "TestModel"
 
     skel = skel.children[0]
 
-    assert isinstance(skel, ComplexSkeleton)
+    assert isinstance(skel, Skeleton)
     assert len(skel.children) == 2
-    assert skel.of_type == t.Union[middle.compat.NoneType, str, int]
-    assert not skel.is_model
-    assert skel.is_field
+    assert skel.type == t.Union[middle.compat.NoneType, str, int]
     assert not skel.has_default_value
     assert skel.name == "lots_of_values"
     assert skel.description is None
     assert skel.nullable
-    assert skel.validator_data is not None
-    assert not skel.validator_data.has_rules
-    assert skel.validator_data.has_type_check
-    assert skel.validator_data.of_type == (middle.compat.NoneType, str, int)
+    assert skel.validator_data.type_check == (middle.compat.NoneType, str, int)
     assert skel.validator_data.rules is None
     assert skel.type_specific == {"any_of": True}
 
@@ -270,19 +246,25 @@ def test_union_type_nullable():
 
     assert isinstance(skel_str, Skeleton)
     assert skel_str.children is None
-    assert skel_str.of_type == str
-    assert not skel_str.is_model
-    assert skel_str.is_field
+    assert skel_str.type == str
     assert not skel_str.has_default_value
+    assert skel_str.validator_data is None
+    assert skel_str.name is None
+    assert skel_str.type_specific is None
+    assert skel_str.description is None
+    assert skel_str.nullable is False
 
     skel_int = skel.children[1]
 
     assert isinstance(skel_int, Skeleton)
     assert skel_int.children is None
-    assert skel_int.of_type == int
-    assert not skel_int.is_model
-    assert skel_int.is_field
+    assert skel_int.type == int
     assert not skel_int.has_default_value
+    assert skel_int.validator_data is None
+    assert skel_int.name is None
+    assert skel_int.type_specific is None
+    assert skel_int.description is None
+    assert skel_int.nullable is False
 
 
 def test_union_type_not_nullable():
@@ -291,27 +273,21 @@ def test_union_type_not_nullable():
 
     skel = translate(TestModel)
 
-    assert isinstance(skel, ComplexSkeleton)
+    assert isinstance(skel, Skeleton)
     assert len(skel.children) == 1
-    assert skel.of_type == TestModel
-    assert skel.is_model
+    assert skel.type == TestModel
     assert skel.name == "TestModel"
 
     skel = skel.children[0]
 
-    assert isinstance(skel, ComplexSkeleton)
+    assert isinstance(skel, Skeleton)
     assert len(skel.children) == 3
-    assert skel.of_type == t.Union[str, int, float]
-    assert not skel.is_model
-    assert skel.is_field
+    assert skel.type == t.Union[str, int, float]
     assert not skel.has_default_value
     assert skel.name == "lots_of_values"
     assert skel.description is None
     assert not skel.nullable
-    assert skel.validator_data is not None
-    assert not skel.validator_data.has_rules
-    assert skel.validator_data.has_type_check
-    assert skel.validator_data.of_type == (str, int, float)
+    assert skel.validator_data.type_check == (str, int, float)
     assert skel.validator_data.rules is None
     assert skel.type_specific == {"any_of": True}
 
@@ -319,25 +295,34 @@ def test_union_type_not_nullable():
 
     assert isinstance(skel_str, Skeleton)
     assert skel_str.children is None
-    assert skel_str.of_type == str
-    assert not skel_str.is_model
-    assert skel_str.is_field
+    assert skel_str.type == str
     assert not skel_str.has_default_value
+    assert skel_str.validator_data is None
+    assert skel_str.name is None
+    assert skel_str.type_specific is None
+    assert skel_str.description is None
+    assert skel_str.nullable is False
 
     skel_int = skel.children[1]
 
     assert isinstance(skel_int, Skeleton)
     assert skel_int.children is None
-    assert skel_int.of_type == int
-    assert not skel_int.is_model
-    assert skel_int.is_field
+    assert skel_int.type == int
     assert not skel_int.has_default_value
+    assert skel_int.validator_data is None
+    assert skel_int.name is None
+    assert skel_int.type_specific is None
+    assert skel_int.description is None
+    assert skel_int.nullable is False
 
     skel_float = skel.children[2]
 
     assert isinstance(skel_float, Skeleton)
     assert skel_float.children is None
-    assert skel_float.of_type == float
-    assert not skel_float.is_model
-    assert skel_float.is_field
+    assert skel_float.type == float
     assert not skel_float.has_default_value
+    assert skel_float.validator_data is None
+    assert skel_float.name is None
+    assert skel_float.type_specific is None
+    assert skel_float.description is None
+    assert skel_float.nullable is False

@@ -68,7 +68,9 @@ def test_enum_choices():
         TEST_3 = 3
 
     class TestModel(middle.Model):
-        some_enum = middle.field(type=TestIntEnum)
+        some_enum = middle.field(
+            type=TestIntEnum, description="Some test enumeration"
+        )
 
     api = parse(TestModel)
 
@@ -77,7 +79,10 @@ def test_enum_choices():
     assert api.components == {
         "TestModel": {
             "properties": {
-                "some_enum": {"$ref": "#/components/schemas/TestIntEnum"}
+                "some_enum": {
+                    "$ref": "#/components/schemas/TestIntEnum",
+                    "description": "Some test enumeration",
+                }
             },
             "type": "object",
             "required": ["some_enum"],

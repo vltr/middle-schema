@@ -16,6 +16,11 @@ from middle.exceptions import InvalidType
 from middle.model import ModelMeta
 from middle.validators import BaseValidator
 
+from .utils import is_model
+
+_sentinel = object()
+
+
 # --------------------------------------------------------------------------- #
 # Validator related data
 # --------------------------------------------------------------------------- #
@@ -24,15 +29,7 @@ from middle.validators import BaseValidator
 @attr.s
 class ValidatorData:
     rules = attr.ib(type=dict, default=None)
-    of_type = attr.ib(default=None)
-
-    @property
-    def has_rules(self):
-        return self.rules is not None and len(self.rules) > 0
-
-    @property
-    def has_type_check(self):
-        return self.of_type is not None
+    type_check = attr.ib(default=None)
 
 
 # --------------------------------------------------------------------------- #
@@ -42,54 +39,20 @@ class ValidatorData:
 
 @attr.s
 class Skeleton:
-    of_type = attr.ib()
-    field = attr.ib(type=Attribute, default=None)
+    type = attr.ib()
+    default_value = attr.ib(default=_sentinel)
+    validator_data = attr.ib(type=ValidatorData, default=None)
+    name = attr.ib(type=str, default=None)
     type_specific = attr.ib(type=dict, default=None)
     description = attr.ib(type=str, default=None)
-    _children = attr.ib(type=list, default=None)
-
-    @property
-    def is_model(self):
-        return (
-            self.of_type is not None
-            and inspect.isclass(self.of_type)
-            and issubclass(self.of_type, middle.Model)
-        )
-
-    @property
-    def is_field(self):
-        return self.field is not None and isinstance(self.field, Attribute)
-
-    @property
-    def default(self):
-        if isinstance(self.field, Attribute):
-            return self.field.default
-        return NOTHING
+    children = attr.ib(type=list, default=None)
+    nullable = attr.ib(type=bool, default=False)
 
     @property
     def has_default_value(self):
-        return self.default != NOTHING
-
-    @property
-    def children(self):
-        return self._children
-
-
-# --------------------------------------------------------------------------- #
-# Complex skeleton (for models and attr.fields)
-# --------------------------------------------------------------------------- #
-
-
-@attr.s
-class ComplexSkeleton(Skeleton):
-    name = attr.ib(type=str, default=None)
-    nullable = attr.ib(type=bool, default=False)
-    validator_data = attr.ib(type=ValidatorData, default=None)
-
-    def __attrs_post_init__(self):
-        if middle.config.default_as_nullable:  # FIXME is this right?
-            if not self.nullable and self.has_default_value:
-                self.nullable = True
+        return (
+            self.default_value != NOTHING and self.default_value != _sentinel
+        )
 
 
 # --------------------------------------------------------------------------- #
@@ -109,36 +72,44 @@ def translate(field, model_or_field=None):
 # --------------------------------------------------------------------------- #
 
 
+def _is_field(model_or_field):
+    return isinstance(model_or_field, Attribute)
+
+
+def _get_default_value(model_or_field):
+    if _is_field(model_or_field):
+        return model_or_field.default
+    return NOTHING
+
+
 def _get_skel_name(model_or_field, extra_field=None):
     if extra_field is not None:
         return _get_skel_name(extra_field, None)
-    if isinstance(model_or_field, Attribute):
+    if _is_field(model_or_field):
         return model_or_field.name
-    elif inspect.isclass(model_or_field) and issubclass(
-        model_or_field, middle.Model
-    ):
+    elif is_model(model_or_field):
         return model_or_field.__name__
     else:  # noqa if it get's here (not if based on middle)
         return str(model_or_field)
 
 
 def _get_validator_data(field):
-    data = {"rules": {}, "of_type": None}
+    data = {}
     if isinstance(field, Attribute):
         if isinstance(field.validator, _AndValidator):
             for validator in field.validator._validators:
                 if isinstance(validator, BaseValidator):
                     data["rules"] = validator.descriptor
                 elif isinstance(validator, _InstanceOfValidator):
-                    data["of_type"] = validator.type
+                    data["type_check"] = validator.type
         else:
             if isinstance(field.validator, BaseValidator):
-                data["rules"] = field.validator.descriptor.items()
+                data["rules"] = field.validator.descriptor
             elif isinstance(field.validator, _InstanceOfValidator):
-                data["of_type"] = field.validator.type
-    of_type = data.get("of_type")
-    rules = None if len(data.get("rules")) == 0 else data.get("rules")
-    return ValidatorData(rules=rules, of_type=of_type)
+                data["type_check"] = field.validator.type
+    return ValidatorData(
+        rules=data.get("rules"), type_check=data.get("type_check")
+    )
 
 
 def _get_model_description(model):
@@ -173,12 +144,12 @@ def _translate_type(type_, model_or_field):
 @_translate_type.register(middle.Model)
 @_translate_type.register(ModelMeta)
 def _translate_model_meta(type_, model_or_field):
-    return ComplexSkeleton(
+    return Skeleton(
         name=_get_skel_name(type_, model_or_field),
         description=_get_model_description(type_)
         or _get_attr_description(model_or_field),
-        field=model_or_field or type_,
-        of_type=type_,
+        type=type_,
+        default_value=_get_default_value(model_or_field),
         children=[translate(field, type_) for field in attr.fields(type_)],
     )
 
@@ -198,12 +169,12 @@ def _translate_model_meta(type_, model_or_field):
 @_translate_type.register(datetime.datetime)
 def _translate_type_generic(type_, model_or_field):
     if model_or_field is None:
-        return Skeleton(of_type=type_)
-    return ComplexSkeleton(
+        return Skeleton(type=type_)
+    return Skeleton(
         name=_get_skel_name(model_or_field),
         description=_get_attr_description(model_or_field),
-        field=model_or_field,
-        of_type=type_,
+        type=type_,
+        default_value=_get_default_value(model_or_field),
         validator_data=_get_validator_data(model_or_field),
     )
 
@@ -216,13 +187,13 @@ def _translate_type_generic(type_, model_or_field):
 @_translate_type.register(EnumMeta)
 def _translate_type_enum(type_, model_or_field):
     choices = [e.value for e in type_]
-    return ComplexSkeleton(
+    return Skeleton(
         name=_get_skel_name(model_or_field),
         description=_get_attr_description(model_or_field),
-        field=model_or_field,
+        default_value=_get_default_value(model_or_field),
         validator_data=_get_validator_data(model_or_field),
         children=[translate(type(choices[0]), None)],
-        of_type=type_,
+        type=type_,
         type_specific={"choices": choices},
     )
 
@@ -230,11 +201,11 @@ def _translate_type_enum(type_, model_or_field):
 @_translate_type.register(typing.List)
 @_translate_type.register(typing.Set)
 def _translate_type_iterable_set(type_, model_or_field):
-    return ComplexSkeleton(
+    return Skeleton(
         name=_get_skel_name(model_or_field),
         description=_get_attr_description(model_or_field),
-        field=model_or_field,
-        of_type=type_,
+        default_value=_get_default_value(model_or_field),
+        type=type_,
         validator_data=_get_validator_data(model_or_field),
         children=[translate(type_.__args__[0], None)],
     )
@@ -243,11 +214,11 @@ def _translate_type_iterable_set(type_, model_or_field):
 @_translate_type.register(typing.Dict)
 def _translate_type_dict(type_, model_or_field):
     if type_.__args__[0] == str:
-        return ComplexSkeleton(
+        return Skeleton(
             name=_get_skel_name(model_or_field),
             description=_get_attr_description(model_or_field),
-            field=model_or_field,
-            of_type=type_,
+            default_value=_get_default_value(model_or_field),
+            type=type_,
             validator_data=_get_validator_data(model_or_field),
             children=[translate(type_.__args__[1], None)],
         )
@@ -264,24 +235,24 @@ def _translate_type_union(type_, model_or_field):
     if NoneType in type_.__args__:
         if len(type_.__args__) == 2:  # Optional
             arg = list(filter(lambda a: a is not NoneType, type_.__args__))[0]
-            return ComplexSkeleton(
+            return Skeleton(
                 name=_get_skel_name(model_or_field),
                 description=_get_attr_description(model_or_field),
-                field=model_or_field,
-                of_type=type_,
+                default_value=_get_default_value(model_or_field),
+                type=type_,
                 validator_data=_get_validator_data(model_or_field),
-                children=[translate(arg, model_or_field)],
+                children=[translate(arg, None)],
                 nullable=True,
             )
         else:
-            return ComplexSkeleton(
+            return Skeleton(
                 name=_get_skel_name(model_or_field),
                 description=_get_attr_description(model_or_field),
-                field=model_or_field,
-                of_type=type_,
+                default_value=_get_default_value(model_or_field),
+                type=type_,
                 validator_data=_get_validator_data(model_or_field),
                 children=[
-                    translate(arg, model_or_field)
+                    translate(arg, None)
                     for arg in type_.__args__
                     if arg is not NoneType
                 ],
@@ -289,12 +260,13 @@ def _translate_type_union(type_, model_or_field):
                 type_specific={"any_of": True},
             )
 
-    return ComplexSkeleton(
+    return Skeleton(
         name=_get_skel_name(model_or_field),
         description=_get_attr_description(model_or_field),
-        field=model_or_field,
-        of_type=type_,
+        # field=model_or_field,
+        default_value=_get_default_value(model_or_field),
+        type=type_,
         validator_data=_get_validator_data(model_or_field),
-        children=[translate(arg, model_or_field) for arg in type_.__args__],
+        children=[translate(arg, None) for arg in type_.__args__],
         type_specific={"any_of": True},
     )

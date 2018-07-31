@@ -3,7 +3,6 @@ import typing as t
 
 import middle
 
-from middle_schema.skel import ComplexSkeleton
 from middle_schema.skel import Skeleton
 from middle_schema.skel import translate
 
@@ -94,15 +93,13 @@ class Game(middle.Model):
     )
 
 
-def test_simple_model():
+def test_complex_model():
 
     skel = translate(Game)
 
-    assert isinstance(skel, ComplexSkeleton)
+    assert isinstance(skel, Skeleton)
     assert len(skel.children) == 10
-    assert skel.of_type == Game
-    assert skel.is_model
-    assert not skel.is_field
+    assert skel.type == Game
     assert not skel.has_default_value
     assert skel.name == "Game"
     assert skel.description == "An electronic game model"
@@ -110,32 +107,34 @@ def test_simple_model():
     assert skel.validator_data is None
 
     for c in skel.children:
+
+        # ------------------------------------------------------------------- #
+        # name field
+        # ------------------------------------------------------------------- #
         if c.name == "name":
-            assert isinstance(c, ComplexSkeleton)
+            assert isinstance(c, Skeleton)
             assert c.children is None
-            assert c.of_type == str
-            assert not c.is_model
-            assert c.is_field
+            assert c.type == str
             assert not c.has_default_value
             assert c.description == "The name of the game"
             assert not c.nullable
             assert c.validator_data is not None
-            assert not c.validator_data.has_rules
-            assert c.validator_data.has_type_check
             assert c.validator_data.rules is None
+            assert c.validator_data.type_check == str
+
+        # ------------------------------------------------------------------- #
+        # platform field
+        # ------------------------------------------------------------------- #
         if c.name == "platform":
-            assert isinstance(c, ComplexSkeleton)
+            assert isinstance(c, Skeleton)
             assert len(c.children) == 1
-            assert c.of_type == PlatformEnum
-            assert not c.is_model
-            assert c.is_field
+            assert c.type == PlatformEnum
             assert not c.has_default_value
             assert c.description == "Which platform it runs on"
             assert not c.nullable
             assert c.validator_data is not None
-            assert not c.validator_data.has_rules
-            assert c.validator_data.has_type_check
             assert c.validator_data.rules is None
+            assert c.validator_data.type_check == PlatformEnum
             assert c.type_specific is not None
             assert c.type_specific == {
                 "choices": ["XBOX1", "PLAYSTATION4", "PC"]
@@ -143,53 +142,58 @@ def test_simple_model():
             # choices type
             assert isinstance(c.children[0], Skeleton)
             assert c.children[0].children is None
-            assert c.children[0].of_type == str
-            assert not c.children[0].is_model
-            assert not c.children[0].is_field
+            assert c.children[0].type == str
             assert not c.children[0].has_default_value
+            assert c.children[0].validator_data is None
+            assert c.children[0].name is None
+            assert c.children[0].type_specific is None
+            assert c.children[0].description is None
+            assert c.children[0].nullable is False
+
+        # ------------------------------------------------------------------- #
+        # score field
+        # ------------------------------------------------------------------- #
         if c.name == "score":
-            assert isinstance(c, ComplexSkeleton)
+            assert isinstance(c, Skeleton)
             assert c.children is None
-            assert c.of_type == float
-            assert not c.is_model
-            assert c.is_field
+            assert c.type == float
             assert not c.has_default_value
             assert c.description == "The average score of the game"
             assert not c.nullable
             assert c.validator_data is not None
-            assert c.validator_data.has_rules
-            assert c.validator_data.has_type_check
+            assert c.validator_data.type_check == float
             assert c.validator_data.rules == {
                 "minimum": 0,
                 "maximum": 10,
                 "multiple_of": 0.1,
             }
+
+        # ------------------------------------------------------------------- #
+        # resolution_tested field
+        # ------------------------------------------------------------------- #
         if c.name == "resolution_tested":
-            assert isinstance(c, ComplexSkeleton)
+            assert isinstance(c, Skeleton)
             assert c.children is None
-            assert c.of_type == str
-            assert not c.is_model
-            assert c.is_field
+            assert c.type == str
             assert not c.has_default_value
             assert c.description == "The resolution which the game was tested"
             assert not c.nullable
             assert c.validator_data is not None
-            assert c.validator_data.has_rules
-            assert c.validator_data.has_type_check
             assert c.validator_data.rules == {"pattern": "^\d+x\d+$"}
+            assert c.validator_data.type_check == str
+
+        # ------------------------------------------------------------------- #
+        # genre field
+        # ------------------------------------------------------------------- #
         if c.name == "genre":
-            assert isinstance(c, ComplexSkeleton)
+            assert isinstance(c, Skeleton)
             assert len(c.children) == 1
-            assert c.of_type == t.List[str]
-            assert not c.is_model
-            assert c.is_field
+            assert c.type == t.List[str]
             assert not c.has_default_value
             assert c.description == "One or more genres this game is part of"
             assert not c.nullable
             assert c.validator_data is not None
-            assert c.validator_data.has_rules
-            assert c.validator_data.has_type_check
-            assert c.validator_data.of_type == list
+            assert c.validator_data.type_check == list
             assert c.validator_data.rules == {
                 "min_items": 1,
                 "unique_items": True,
@@ -197,61 +201,70 @@ def test_simple_model():
             # inner list type
             assert isinstance(c.children[0], Skeleton)
             assert c.children[0].children is None
-            assert c.children[0].of_type == str
-            assert not c.children[0].is_model
-            assert not c.children[0].is_field
+            assert c.children[0].type == str
             assert not c.children[0].has_default_value
+            assert c.children[0].validator_data is None
+            assert c.children[0].name is None
+            assert c.children[0].type_specific is None
+            assert c.children[0].description is None
+            assert c.children[0].nullable is False
+
+        # ------------------------------------------------------------------- #
+        # rating field
+        # ------------------------------------------------------------------- #
         if c.name == "rating":
-            assert isinstance(c, ComplexSkeleton)
+            assert isinstance(c, Skeleton)
             assert len(c.children) == 1
-            assert c.of_type == t.Dict[str, float]
-            assert not c.is_model
-            assert c.is_field
+            assert c.type == t.Dict[str, float]
             assert not c.has_default_value
             assert c.description == "Ratings given on specialized websites"
             assert not c.nullable
             assert c.validator_data is not None
-            assert c.validator_data.has_rules
-            assert c.validator_data.has_type_check
-            assert c.validator_data.of_type == dict
+            assert c.validator_data.type_check == dict
             assert c.validator_data.rules == {"min_properties": 3}
             # inner dict type
             assert isinstance(c.children[0], Skeleton)
             assert c.children[0].children is None
-            assert c.children[0].of_type == float
-            assert not c.children[0].is_model
-            assert not c.children[0].is_field
+            assert c.children[0].type == float
             assert not c.children[0].has_default_value
+            assert c.children[0].validator_data is None
+            assert c.children[0].name is None
+            assert c.children[0].type_specific is None
+            assert c.children[0].description is None
+            assert c.children[0].nullable is False
+
+        # ------------------------------------------------------------------- #
+        # players field
+        # ------------------------------------------------------------------- #
         if c.name == "players":
-            assert isinstance(c, ComplexSkeleton)
+            assert isinstance(c, Skeleton)
             assert len(c.children) == 1
-            assert c.of_type == t.Set[Player]
-            assert not c.is_model
-            assert c.is_field
+            assert c.type == t.Set[Player]
             assert not c.has_default_value
             assert (
                 c.description == "Some of the notorious players of this game"
             )
             assert not c.nullable
             assert c.validator_data is not None
-            assert not c.validator_data.has_rules
-            assert c.validator_data.has_type_check
-            assert c.validator_data.of_type == set
+            assert c.validator_data.rules is None
+            assert c.validator_data.type_check == set
             # inner set type
             ci = c.children[0]
             assert isinstance(ci, Skeleton)
             assert len(ci.children) == 2
-            assert ci.of_type == Player
-            assert ci.is_model
-            assert not ci.is_field
+            assert ci.type == Player
+            assert not ci.has_default_value
+            assert ci.validator_data is None
+            assert ci.name == "Player"
+            assert ci.type_specific is None
+            assert ci.description is None
+            assert ci.nullable is False
             # inner model (complex type)
             for cj in ci.children:
                 if cj.name == "nickname":
-                    assert isinstance(c, ComplexSkeleton)
+                    assert isinstance(c, Skeleton)
                     assert cj.children is None
-                    assert cj.of_type == str
-                    assert not cj.is_model
-                    assert cj.is_field
+                    assert cj.type == str
                     assert not cj.has_default_value
                     assert (
                         cj.description
@@ -259,59 +272,58 @@ def test_simple_model():
                     )
                     assert not cj.nullable
                     assert cj.validator_data is not None
-                    assert not cj.validator_data.has_rules
-                    assert cj.validator_data.has_type_check
-                    assert cj.validator_data.of_type == str
+                    assert cj.validator_data.type_check == str
                     assert cj.validator_data.rules is None
                 if cj.name == "youtube_channel":
-                    assert isinstance(c, ComplexSkeleton)
+                    assert isinstance(c, Skeleton)
                     assert cj.children is None
-                    assert cj.of_type == str
-                    assert not cj.is_model
-                    assert cj.is_field
+                    assert cj.type == str
                     assert cj.has_default_value
-                    assert cj.default is None
+                    assert cj.default_value is None
                     assert (
                         cj.description == "The YouTube channel of the player"
                     )
-                    assert cj.nullable
+                    assert not cj.nullable
                     assert cj.validator_data is not None
-                    assert not cj.validator_data.has_rules
-                    assert cj.validator_data.has_type_check
-                    assert cj.validator_data.of_type == (
+                    assert cj.validator_data.type_check == (
                         str,
                         middle.compat.NoneType,
                     )
                     assert cj.validator_data.rules is None
+
+        # ------------------------------------------------------------------- #
+        # language field
+        # ------------------------------------------------------------------- #
         if c.name == "language":
-            assert isinstance(c, ComplexSkeleton)
+            assert isinstance(c, Skeleton)
             assert len(c.children) == 1
-            assert c.of_type == LanguageEnum
-            assert not c.is_model
-            assert c.is_field
+            assert c.type == LanguageEnum
             assert not c.has_default_value
             assert c.description == "The main language of the game"
             assert not c.nullable
             assert c.validator_data is not None
-            assert not c.validator_data.has_rules
-            assert c.validator_data.has_type_check
-            assert c.validator_data.of_type == LanguageEnum
+            assert c.validator_data.type_check == LanguageEnum
             assert c.validator_data.rules is None
             assert c.type_specific is not None
             assert c.type_specific == {"choices": [1, 2, 3, 4, 5]}
             # choices type
             assert isinstance(c.children[0], Skeleton)
             assert c.children[0].children is None
-            assert c.children[0].of_type == int
-            assert not c.children[0].is_model
-            assert not c.children[0].is_field
+            assert c.children[0].type == int
             assert not c.children[0].has_default_value
+            assert c.children[0].validator_data is None
+            assert c.children[0].name is None
+            assert c.children[0].type_specific is None
+            assert c.children[0].description is None
+            assert c.children[0].nullable is False
+
+        # ------------------------------------------------------------------- #
+        # awesome city field
+        # ------------------------------------------------------------------- #
         if c.name == "awesome_city":
-            assert isinstance(c, ComplexSkeleton)
+            assert isinstance(c, Skeleton)
             assert len(c.children) == 2
-            assert c.of_type == City
-            assert c.is_model
-            assert c.is_field
+            assert c.type == City
             assert not c.has_default_value
             assert c.description == "One awesome city built"
             assert not c.nullable
@@ -319,33 +331,25 @@ def test_simple_model():
             # inner model (complex type)
             for ci in c.children:
                 if ci.name == "name":
-                    assert isinstance(c, ComplexSkeleton)
+                    assert isinstance(c, Skeleton)
                     assert ci.children is None
-                    assert ci.of_type == str
-                    assert not ci.is_model
-                    assert ci.is_field
+                    assert ci.type == str
                     assert not ci.has_default_value
                     assert ci.description == "The city name"
                     assert not ci.nullable
                     assert ci.validator_data is not None
-                    assert not ci.validator_data.has_rules
-                    assert ci.validator_data.has_type_check
-                    assert ci.validator_data.of_type == str
+                    assert ci.validator_data.type_check == str
                     assert ci.validator_data.rules is None
                 if ci.name == "region":
-                    assert isinstance(ci, ComplexSkeleton)
+                    assert isinstance(ci, Skeleton)
                     assert len(ci.children) == 1
-                    assert ci.of_type == CityRegionEnum
-                    assert not ci.is_model
-                    assert ci.is_field
+                    assert ci.type == CityRegionEnum
                     assert ci.has_default_value
-                    assert ci.default == CityRegionEnum.TEMPERATE
+                    assert ci.default_value == CityRegionEnum.TEMPERATE
                     assert ci.description == "The region this city is located"
-                    assert ci.nullable
+                    assert not ci.nullable
                     assert ci.validator_data is not None
-                    assert not ci.validator_data.has_rules
-                    assert ci.validator_data.has_type_check
-                    assert ci.validator_data.of_type == CityRegionEnum
+                    assert ci.validator_data.type_check == CityRegionEnum
                     assert ci.validator_data.rules is None
                     assert ci.type_specific is not None
                     assert ci.type_specific == {
@@ -354,16 +358,21 @@ def test_simple_model():
                     # choices type
                     assert isinstance(ci.children[0], Skeleton)
                     assert ci.children[0].children is None
-                    assert ci.children[0].of_type == str
-                    assert not ci.children[0].is_model
-                    assert not ci.children[0].is_field
+                    assert ci.children[0].type == str
                     assert not ci.children[0].has_default_value
+                    assert ci.children[0].validator_data is None
+                    assert ci.children[0].name is None
+                    assert ci.children[0].type_specific is None
+                    assert ci.children[0].description is None
+                    assert ci.children[0].nullable is False
+
+        # ------------------------------------------------------------------- #
+        # remarkable_resources field
+        # ------------------------------------------------------------------- #
         if c.name == "remarkable_resources":
-            assert isinstance(c, ComplexSkeleton)
+            assert isinstance(c, Skeleton)
             assert len(c.children) == 2
-            assert c.of_type == t.Union[Player, City]
-            assert not c.is_model
-            assert c.is_field
+            assert c.type == t.Union[Player, City]
             assert not c.has_default_value
             assert (
                 c.description
@@ -371,15 +380,11 @@ def test_simple_model():
             )
             assert not c.nullable
             assert c.validator_data is not None
-            assert not c.validator_data.has_rules
-            assert c.validator_data.has_type_check
-            assert c.validator_data.of_type == (Player, City)
+            assert c.validator_data.type_check == (Player, City)
             assert c.validator_data.rules is None
             # inner models (union of complex type)
             for ci in c.children:
-                assert ci.of_type in (Player, City)
-                assert isinstance(c, ComplexSkeleton)
+                assert ci.type in (Player, City)
+                assert isinstance(c, Skeleton)
                 assert len(ci.children) > 0
-                assert ci.is_model
-                assert ci.is_field
-                assert ci.description is not None
+                assert ci.name is not None
