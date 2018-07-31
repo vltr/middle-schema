@@ -88,6 +88,14 @@ In a nutshell
     ...         description="The region this city is located",
     ...     )
 
+    >>> class Player(middle.Model):
+    ...     nickname = middle.field(
+    ...         type=str, description="The nickname of the player over the internet"
+    ...     )
+    ...     youtube_channel = middle.field(
+    ...         type=str, description="The YouTube channel of the player", default=None
+    ...     )
+
     >>> class Game(middle.Model):
     ...     __description__ = "An electronic game model"
     ...     name = middle.field(type=str, description="The name of the game")
@@ -125,6 +133,10 @@ In a nutshell
     ...         type=LanguageEnum, description="The main language of the game"
     ...     )
     ...     awesome_city = middle.field(type=City)
+    ...     remarkable_resources = middle.field(
+    ...         type=t.Union[Player, City],
+    ...         description="Some remarkable resources of this game over the internet",
+    ...     )
 
     >>> api = parse(Game)
 
@@ -191,7 +203,20 @@ In a nutshell
             "players": {
                 "description": "Some of the notorious players of this game",
                 "items": {
-                    "type": "string"
+                    "properties": {
+                        "nickname": {
+                            "description": "The nickname of the player over the internet",
+                            "type": "string"
+                        },
+                        "youtube_channel": {
+                            "description": "The YouTube channel of the player",
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "nickname"
+                    ],
+                    "type": "object"
                 },
                 "type": "array"
             },
@@ -203,6 +228,49 @@ In a nutshell
                 "description": "Ratings given on specialized websites",
                 "minProperties": 3,
                 "type": "object"
+            },
+            "remarkable_resources": {
+                "anyOf": [
+                    {
+                        "properties": {
+                            "nickname": {
+                                "description": "The nickname of the player over the internet",
+                                "type": "string"
+                            },
+                            "youtube_channel": {
+                                "description": "The YouTube channel of the player",
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "nickname"
+                        ],
+                        "type": "object"
+                    },
+                    {
+                        "description": "One awesome city built",
+                        "properties": {
+                            "name": {
+                                "description": "The city name",
+                                "type": "string"
+                            },
+                            "region": {
+                                "choices": [
+                                    "TROPICAL",
+                                    "TEMPERATE",
+                                    "BOREAL"
+                                ],
+                                "description": "The region this city is located",
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "name"
+                        ],
+                        "type": "object"
+                    }
+                ],
+                "description": "Some remarkable resources of this game over the internet"
             },
             "resolution_tested": {
                 "description": "The resolution which the game was tested",
@@ -227,7 +295,8 @@ In a nutshell
             "rating",
             "players",
             "language",
-            "awesome_city"
+            "awesome_city",
+            "remarkable_resources"
         ],
         "type": "object"
     }
