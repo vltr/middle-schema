@@ -40,10 +40,6 @@
     :target: https://pyup.io/account/repos/github/vltr/middle-schema/
     :alt: Packages status
 
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-    :alt: Code style: black
-    :target: https://github.com/ambv/black
-
 .. end-badges
 
 Translate your `middle <https://middle.readthedocs.io/en/latest/>`_ model declarations to OpenAPI, JSONSchema or any other schema you need!

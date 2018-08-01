@@ -50,7 +50,7 @@ html_sidebars = {
 html_short_title = '%s-%s' % (project, version)
 
 html_theme_options = {
-    "style_external_links": True,
+    "style_external_links": False,
     "logo_only": False,
 }
 

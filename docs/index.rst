@@ -6,8 +6,8 @@
     :caption: middle-schema
     :maxdepth: 1
 
-    about
     installing
+    using
 
 .. toctree::
     :caption: About the Project
