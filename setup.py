@@ -19,7 +19,7 @@ def read(*names, **kwargs):
 
 setup(
     name="middle-schema",
-    version="0.1.0",
+    version="0.2.0",
     license="MIT license",
     description="Translate your middle model declarations to OpenAPI, JSONSchema or any other schema you need",
     long_description="%s\n%s"
